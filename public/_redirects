@@ -1,0 +1,2 @@
+/* Redirect all frontend routes to index.html for React Router DOM SPA */
+/*    /index.html   200
