@@ -5,9 +5,9 @@ import socket from '../services/socket';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { 
-  Search, Filter, Maximize2, Minimize2, Navigation, 
-  Wifi, Battery, ShieldAlert, Zap, Bus as BusIcon, RefreshCw, X, MapPin 
+import {
+  Search, Filter, Maximize2, Minimize2, Navigation,
+  Wifi, Battery, ShieldAlert, Zap, Bus as BusIcon, RefreshCw, X, MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -166,11 +166,10 @@ export default function LiveTracking() {
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  filterStatus === status
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${filterStatus === status
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
               >
                 {status}
               </button>
@@ -178,11 +177,10 @@ export default function LiveTracking() {
 
             <button
               onClick={() => setShowRoutes(!showRoutes)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${
-                showRoutes 
-                  ? 'border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-950/40' 
-                  : 'border-slate-300 dark:border-slate-700 text-slate-500'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${showRoutes
+                ? 'border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-950/40'
+                : 'border-slate-300 dark:border-slate-700 text-slate-500'
+                }`}
             >
               Polylines: {showRoutes ? 'ON' : 'OFF'}
             </button>
@@ -272,7 +270,7 @@ export default function LiveTracking() {
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
-                    <div 
+                    <div
                       className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-md flex-shrink-0"
                       style={{ backgroundColor: getStatusColor(selectedBus.status) }}
                     >
@@ -283,7 +281,7 @@ export default function LiveTracking() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{selectedBus.model}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedBus(null)}
                     className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition flex-shrink-0"
                   >

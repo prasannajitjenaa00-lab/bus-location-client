@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  LayoutDashboard, Map, History, Bus, Users, Route as RouteIcon, 
+import {
+  LayoutDashboard, Map, History, Bus, Users, Route as RouteIcon,
   BarChart3, Settings, LogOut, Sun, Moon, ShieldCheck, ChevronRight,
   Menu, X
 } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function AdminLayout({ children }) {
 
       {/* Backdrop for Mobile Sidebar */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -88,7 +88,7 @@ export default function AdminLayout({ children }) {
           {/* Close button on mobile sidebar top */}
           <div className="md:hidden flex items-center justify-between px-2 pb-4 mb-2 border-b border-slate-200 dark:border-slate-800">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Navigation</span>
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(false)}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
@@ -106,11 +106,10 @@ export default function AdminLayout({ children }) {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25' 
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${isActive
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                    }`}
                 >
                   <div className="flex items-center space-x-3">
                     <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />

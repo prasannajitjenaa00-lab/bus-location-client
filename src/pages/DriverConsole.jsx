@@ -18,9 +18,10 @@ export default function DriverConsole() {
   const [selectedBusId, setSelectedBusId] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState('');
   
-  // Realtime Telemetry Simulation state
+  // Realtime Telemetry & Dynamic Phone Battery State
   const [isGpsActive, setIsGpsActive] = useState(false);
-  const [batteryLevel, setBatteryLevel] = useState(94);
+  const [batteryLevel, setBatteryLevel] = useState(92);
+  const [isCharging, setIsCharging] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -29,6 +30,22 @@ export default function DriverConsole() {
   useEffect(() => {
     fetchActiveTrip();
     fetchBusesAndRoutes();
+
+    // Read real phone device battery level via Battery Status API
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then((battery) => {
+        setBatteryLevel(Math.round(battery.level * 100));
+        setIsCharging(battery.charging);
+
+        const updateBattery = () => {
+          setBatteryLevel(Math.round(battery.level * 100));
+          setIsCharging(battery.charging);
+        };
+
+        battery.addEventListener('levelchange', updateBattery);
+        battery.addEventListener('chargingchange', updateBattery);
+      }).catch(err => console.warn('Battery API error:', err));
+    }
   }, []);
 
   const fetchActiveTrip = async () => {
@@ -85,87 +102,182 @@ export default function DriverConsole() {
     return `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
   };
 
-  // Real Device HTML5 Geolocation API Integration
+  // Screen Wake Lock API & Service Worker Registration
+  useEffect(() => {
+    let wakeLock = null;
+
+    // Register Service Worker for persistent background execution
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        if ('periodicSync' in reg && isGpsActive) {
+          reg.periodicSync.register('location-sync', { minInterval: 10 * 1000 }).catch(() => {});
+        }
+      }).catch(err => {
+        console.warn('Service Worker registration failed:', err);
+      });
+
+      const handleSwMessage = (event) => {
+        if (event.data && event.data.type === 'TRIGGER_LOCATION_UPDATE') {
+          if ('geolocation' in navigator && isGpsActive) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const { latitude, longitude, speed, heading, accuracy } = pos.coords;
+                sendLocationUpdate(latitude, longitude, speed, heading, accuracy);
+              },
+              () => {},
+              { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+          }
+        }
+      };
+
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator && isGpsActive) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) {
+          console.warn('Wake Lock request error:', err.message);
+        }
+      }
+    };
+
+    if (isGpsActive) {
+      requestWakeLock();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isGpsActive) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, [isGpsActive]);
+
+  // Real Device HTML5 Geolocation API Integration with Heartbeat Fallback
   useEffect(() => {
     let watchId;
+    let intervalId;
     let lastPosition = null;
     let lastTime = null;
+
+    const sendLocationUpdate = async (latitude, longitude, rawSpeed, rawHeading, accuracy) => {
+      const now = Date.now();
+      let calculatedSpeedKmh = 0;
+
+      if (rawSpeed !== null && rawSpeed !== undefined && !isNaN(rawSpeed)) {
+        calculatedSpeedKmh = Math.round(rawSpeed * 3.6);
+      } else if (lastPosition && lastTime) {
+        const distKm = calculateHaversineDistance(lastPosition.lat, lastPosition.lng, latitude, longitude);
+        const timeSec = (now - lastTime) / 1000;
+        if (timeSec > 0) {
+          calculatedSpeedKmh = Math.round((distKm / timeSec) * 3600);
+        }
+      }
+
+      if (lastPosition) {
+        const deltaDist = calculateHaversineDistance(lastPosition.lat, lastPosition.lng, latitude, longitude);
+        setDistanceKm(prev => Math.round((prev + deltaDist) * 100) / 100);
+      }
+
+      lastPosition = { lat: latitude, lng: longitude };
+      lastTime = now;
+
+      setCurrentCoords({ lat: latitude, lng: longitude });
+      setCurrentSpeed(calculatedSpeedKmh);
+
+      const busId = activeTrip?.bus?._id || activeTrip?.bus || selectedBusId;
+      if (!busId || !activeTrip) return;
+
+      try {
+        await api.post('/location/update', {
+          busId,
+          tripId: activeTrip._id,
+          lat: latitude,
+          lng: longitude,
+          speed: calculatedSpeedKmh,
+          heading: rawHeading || 0,
+          accuracy: accuracy || 5,
+          batteryLevel
+        });
+
+        socket.emit('location:update', {
+          busId,
+          driverId: driver._id,
+          tripId: activeTrip._id,
+          lat: latitude,
+          lng: longitude,
+          speed: calculatedSpeedKmh,
+          heading: rawHeading || 0,
+          timestamp: new Date()
+        });
+      } catch (err) {
+        console.error('Location sync error:', err);
+      }
+    };
 
     if (isGpsActive && activeTrip) {
       if ('geolocation' in navigator) {
         watchId = navigator.geolocation.watchPosition(
-          async (position) => {
-            const { latitude, longitude, speed: rawSpeed, heading: rawHeading, accuracy } = position.coords;
-            const now = Date.now();
-
-            let calculatedSpeedKmh = 0;
-
-            if (rawSpeed !== null && rawSpeed !== undefined && !isNaN(rawSpeed)) {
-              // Convert m/s to km/h directly from device GPS sensor
-              calculatedSpeedKmh = Math.round(rawSpeed * 3.6);
-            } else if (lastPosition && lastTime) {
-              // Derive real speed from delta distance over delta time
-              const distKm = calculateHaversineDistance(lastPosition.lat, lastPosition.lng, latitude, longitude);
-              const timeSec = (now - lastTime) / 1000;
-              if (timeSec > 0) {
-                calculatedSpeedKmh = Math.round((distKm / timeSec) * 3600);
-              }
-            }
-
-            // Accumulate actual traveled distance
-            if (lastPosition) {
-              const deltaDist = calculateHaversineDistance(lastPosition.lat, lastPosition.lng, latitude, longitude);
-              setDistanceKm(prev => Math.round((prev + deltaDist) * 100) / 100);
-            }
-
-            lastPosition = { lat: latitude, lng: longitude };
-            lastTime = now;
-
-            setCurrentCoords({ lat: latitude, lng: longitude });
-            setCurrentSpeed(calculatedSpeedKmh);
-
-            const liveAddress = await fetchAddressFromCoords(latitude, longitude);
-            const busId = activeTrip.bus?._id || activeTrip.bus || selectedBusId;
-
-            try {
-              await api.post('/location/update', {
-                busId,
-                tripId: activeTrip._id,
-                lat: latitude,
-                lng: longitude,
-                speed: calculatedSpeedKmh,
-                heading: rawHeading || 0,
-                accuracy: accuracy || 5,
-                batteryLevel,
-                address: liveAddress
-              });
-
-              socket.emit('location:update', {
-                busId,
-                driverId: driver._id,
-                tripId: activeTrip._id,
-                lat: latitude,
-                lng: longitude,
-                speed: calculatedSpeedKmh,
-                heading: rawHeading || 0,
-                address: liveAddress,
-                timestamp: new Date()
-              });
-            } catch (err) {
-              console.error('Location sync error:', err);
-            }
+          (position) => {
+            const { latitude, longitude, speed, heading, accuracy } = position.coords;
+            sendLocationUpdate(latitude, longitude, speed, heading, accuracy);
           },
           (error) => {
             console.warn('Geolocation sensor error:', error.message);
-            toast.error(`GPS Error: ${error.message}`);
+            if (error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
+              toast.error('GPS Location turned OFF! Please enable location on your device to continue tracking.');
+              
+              const busId = activeTrip?.bus?._id || activeTrip?.bus || selectedBusId;
+              if (busId) {
+                // Emit alert status to Admin Dashboard when GPS location is disabled
+                socket.emit('location:update', {
+                  busId,
+                  driverId: driver._id,
+                  tripId: activeTrip._id,
+                  status: 'Alert',
+                  speed: 0,
+                  address: 'GPS Sensors Disabled by Driver',
+                  timestamp: new Date()
+                });
+              }
+            }
           },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
+
+        // Heartbeat fallback: Periodic position push every 6s (keeps background socket active)
+        intervalId = setInterval(() => {
+          // Ping Service Worker to keep JS event loop active during screen lock
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'PING' });
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude, speed, heading, accuracy } = position.coords;
+              sendLocationUpdate(latitude, longitude, speed, heading, accuracy);
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        }, 6000);
       }
     }
 
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [isGpsActive, activeTrip, selectedBusId]);
 
@@ -335,10 +447,12 @@ export default function DriverConsole() {
 
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BatteryCharging className="w-5 h-5 text-cyan-400" />
+            <BatteryCharging className={`w-5 h-5 ${isCharging ? 'text-emerald-400 animate-pulse' : 'text-cyan-400'}`} />
             <div>
               <p className="text-[10px] uppercase text-slate-400 font-semibold">Phone Battery</p>
-              <p className="text-xs font-bold text-slate-200">{batteryLevel}% Charging</p>
+              <p className="text-xs font-bold text-slate-200 font-mono">
+                {batteryLevel}% {isCharging ? '(Charging)' : '(On Battery)'}
+              </p>
             </div>
           </div>
         </div>
