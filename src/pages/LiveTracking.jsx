@@ -268,33 +268,33 @@ export default function LiveTracking() {
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                className="absolute top-4 right-4 w-96 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl z-[1000] text-slate-900 dark:text-white"
+                className="absolute bottom-4 left-4 right-4 sm:left-auto sm:bottom-auto sm:top-4 sm:right-4 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl z-[1000] text-slate-900 dark:text-white"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
                     <div 
-                      className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-md"
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-md flex-shrink-0"
                       style={{ backgroundColor: getStatusColor(selectedBus.status) }}
                     >
                       <BusIcon className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-base">{selectedBus.busNumber}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{selectedBus.model}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-base truncate">{selectedBus.busNumber}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{selectedBus.model}</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setSelectedBus(null)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition"
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition flex-shrink-0"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 py-4 text-xs border-b border-slate-200 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-3 py-3 sm:py-4 text-xs border-b border-slate-200 dark:border-slate-800">
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-semibold">Driver</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
                       {selectedBus.assignedDriver?.name || 'Unassigned'}
                     </span>
                   </div>
@@ -320,14 +320,14 @@ export default function LiveTracking() {
 
                 <div className="pt-3 space-y-2 text-xs text-slate-500 dark:text-slate-400">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-blue-500" /> Address:</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[180px]">
+                    <span className="flex items-center gap-1 flex-shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-500" /> Address:</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[140px] sm:max-w-[180px]">
                       {selectedBus.lastKnownLocation?.address || 'Depot'}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5 text-emerald-500" /> Lat / Lng:</span>
+                    <span className="flex items-center gap-1 flex-shrink-0"><Wifi className="w-3.5 h-3.5 text-emerald-500" /> Lat / Lng:</span>
                     <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
                       {selectedBus.lastKnownLocation?.lat?.toFixed(4)}, {selectedBus.lastKnownLocation?.lng?.toFixed(4)}
                     </span>

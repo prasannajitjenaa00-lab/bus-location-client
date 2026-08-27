@@ -113,54 +113,56 @@ export default function BusManagement() {
 
         {/* Table Container */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/40">
-                <th className="p-4">Bus # / Reg</th>
-                <th className="p-4">Model & Capacity</th>
-                <th className="p-4">Assigned Driver</th>
-                <th className="p-4">Assigned Route</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-              {buses.map((bus) => (
-                <tr key={bus._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                  <td className="p-4">
-                    <p className="font-bold text-slate-900 dark:text-white">{bus.busNumber}</p>
-                    <p className="text-[11px] text-slate-400 font-mono">{bus.registrationNumber}</p>
-                  </td>
-                  <td className="p-4">
-                    <p className="font-medium text-slate-800 dark:text-slate-200">{bus.model}</p>
-                    <p className="text-[11px] text-slate-400">{bus.capacity} Seats</p>
-                  </td>
-                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
-                    {bus.assignedDriver?.name || 'Unassigned'}
-                  </td>
-                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
-                    {bus.assignedRoute?.routeName || 'Unassigned'}
-                  </td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      bus.status === 'Running' ? 'bg-emerald-500/10 text-emerald-500' :
-                      bus.status === 'Idle' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
-                    }`}>
-                      {bus.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button onClick={() => openEditModal(bus)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-lg">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDelete(bus._id)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/40">
+                  <th className="p-4">Bus # / Reg</th>
+                  <th className="p-4">Model & Capacity</th>
+                  <th className="p-4">Assigned Driver</th>
+                  <th className="p-4">Assigned Route</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {buses.map((bus) => (
+                  <tr key={bus._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                    <td className="p-4">
+                      <p className="font-bold text-slate-900 dark:text-white">{bus.busNumber}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">{bus.registrationNumber}</p>
+                    </td>
+                    <td className="p-4">
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{bus.model}</p>
+                      <p className="text-[11px] text-slate-400">{bus.capacity} Seats</p>
+                    </td>
+                    <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
+                      {bus.assignedDriver?.name || 'Unassigned'}
+                    </td>
+                    <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
+                      {bus.assignedRoute?.routeName || 'Unassigned'}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        bus.status === 'Running' ? 'bg-emerald-500/10 text-emerald-500' :
+                        bus.status === 'Idle' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
+                      }`}>
+                        {bus.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      <button onClick={() => openEditModal(bus)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 rounded-lg">
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(bus._id)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Edit / Add Modal */}
